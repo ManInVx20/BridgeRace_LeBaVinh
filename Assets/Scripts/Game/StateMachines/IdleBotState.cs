@@ -28,7 +28,7 @@ public class IdleBotState : IBotState
             {
                 bot.ChangeState(new BuildBotState());
             }
-            else
+            else if (bot.TargetBrick != null)
             {
                 bot.TargetBrick = null;
 

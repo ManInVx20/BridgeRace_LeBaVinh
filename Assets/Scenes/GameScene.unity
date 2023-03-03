@@ -1396,7 +1396,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <ObjectColorsSO>k__BackingField: {fileID: 11400000, guid: 0a83bcd36a64bc3459b5372b603f5bdf, type: 2}
   <LevelPrefabArray>k__BackingField:
-  - {fileID: 8138990791796394561, guid: b67ce37fc3298cc41ad950e4d72878aa, type: 3}
+  - {fileID: 8138990791796394561, guid: f8d4d3e85c903b44fa38e9a281fd4eb6, type: 3}
+  - {fileID: 8138990791796394561, guid: 03c0c287f1d824244b91c71ee02d52af, type: 3}
+  - {fileID: 8138990791796394561, guid: 10e5e6b06419481459fa2a5b3f2b90c2, type: 3}
 --- !u!4 &742212738
 Transform:
   m_ObjectHideFlags: 0

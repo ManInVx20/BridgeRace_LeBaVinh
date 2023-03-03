@@ -10,7 +10,7 @@ public enum ObjectColorType
     Blue,
     Yellow,
     Cyan,
-    Pink
+    Magenta
 }
 
 public interface IHasColor
