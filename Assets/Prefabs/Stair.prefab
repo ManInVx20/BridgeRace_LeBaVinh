@@ -28,7 +28,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 178232106044839887}
   - {fileID: 8475681925758124887}
@@ -88,7 +87,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4574812021011102751}
   m_Father: {fileID: 178232104536223343}
@@ -120,7 +118,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5569218170058399567}
   - {fileID: 2331900240293271178}
@@ -156,7 +153,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.25, z: 0}
   m_LocalScale: {x: 2, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8475681925758124887}
   m_RootOrder: 0
@@ -180,7 +176,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -256,7 +251,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 2, z: 0}
   m_LocalScale: {x: 3, y: 0.025, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8475681925758124887}
   m_RootOrder: 1
@@ -280,7 +274,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -384,13 +377,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 91af32b9062dbc840b2b9962aea16818, type: 3}
---- !u!23 &4574812021011102749 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 4397143179804712761, guid: 91af32b9062dbc840b2b9962aea16818, type: 3}
-  m_PrefabInstance: {fileID: 178232104969511716}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4574812021011102751 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4397143179804712763, guid: 91af32b9062dbc840b2b9962aea16818, type: 3}
+  m_PrefabInstance: {fileID: 178232104969511716}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &4574812021011102749 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4397143179804712761, guid: 91af32b9062dbc840b2b9962aea16818, type: 3}
   m_PrefabInstance: {fileID: 178232104969511716}
   m_PrefabAsset: {fileID: 0}
