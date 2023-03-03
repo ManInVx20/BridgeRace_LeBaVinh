@@ -39,6 +39,10 @@ public class PostGameView : View
         tryAgainButton.onClick.RemoveListener(OnTryAgainButtonClicked);
         exit1Button.onClick.RemoveListener(OnExitButtonClicked);
         exit2Button.onClick.AddListener(OnExitButtonClicked);
+
+        LevelManager.Instance.OnLoadLevel -= LevelManager_OnLoadLevel;
+        LevelManager.Instance.OnStartLevel -= LevelManager_OnStartLevel;
+        LevelManager.Instance.OnFinishLevel -= LevelManager_OnFinishLevel;
     }
 
     private void OnNextButtonClicked()

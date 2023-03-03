@@ -2,9 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class InGameView : View
 {
+    [SerializeField]
+    private Button backButton;
     [SerializeField]
     private GameObject joystickGameObject;
 
@@ -12,9 +15,25 @@ public class InGameView : View
     {
         base.Start();
 
+        backButton.onClick.AddListener(OnBackButtonClicked);
+
         LevelManager.Instance.OnLoadLevel += LevelManager_OnLoadLevel;
         LevelManager.Instance.OnStartLevel += LevelManager_OnStartLevel;
         LevelManager.Instance.OnFinishLevel += LevelManager_OnFinishLevel;
+    }
+
+    private void OnDestroy()
+    {
+        backButton.onClick.RemoveListener(OnBackButtonClicked);
+
+        LevelManager.Instance.OnLoadLevel -= LevelManager_OnLoadLevel;
+        LevelManager.Instance.OnStartLevel -= LevelManager_OnStartLevel;
+        LevelManager.Instance.OnFinishLevel -= LevelManager_OnFinishLevel;
+    }
+
+    private void OnBackButtonClicked()
+    {
+        GameManager.Instance.ExitGame();
     }
 
     private void LevelManager_OnLoadLevel(object sender, EventArgs args)

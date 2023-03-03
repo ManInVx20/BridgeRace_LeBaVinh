@@ -8,11 +8,6 @@ public class Player : Character
 {
     private Joystick joystick;
 
-    protected override void Initialize()
-    {
-        base.Initialize();
-    }
-
     protected override void UpdateState()
     {
         base.UpdateState();

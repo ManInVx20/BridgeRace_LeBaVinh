@@ -17,6 +17,12 @@ public class PreGameView : View
         LevelManager.Instance.OnStartLevel += LevelManager_OnStartLevel;
     }
 
+    private void OnDestroy()
+    {
+        LevelManager.Instance.OnLoadLevel -= LevelManager_OnLoadLevel;
+        LevelManager.Instance.OnStartLevel -= LevelManager_OnStartLevel;
+    }
+
     public void SetCountdownText(float value)
     {
         value = Mathf.CeilToInt(value);

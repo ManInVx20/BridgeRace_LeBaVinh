@@ -24,6 +24,7 @@ public class CameraFollow : MonoBehaviour
 
     private void Start()
     {
+        LevelManager.Instance.OnLoadLevel += LevelManager_OnLoadLevel;
         LevelManager.Instance.OnStartLevel += LevelManager_OnStartLevel;
         LevelManager.Instance.OnFinishLevel += LevelManager_OnFinishLevel;
     }
@@ -46,10 +47,15 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
-    private void LevelManager_OnStartLevel(object sender, EventArgs args)
+    private void LevelManager_OnLoadLevel(object sender, EventArgs e)
     {
         targetPlayer = FindObjectOfType<Player>();
 
+        currentOffset = startOffset;
+    }
+
+    private void LevelManager_OnStartLevel(object sender, EventArgs args)
+    {
         currentOffset = startOffset;
     }
 

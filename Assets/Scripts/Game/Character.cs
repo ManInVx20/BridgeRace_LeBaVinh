@@ -47,6 +47,12 @@ public class Character : MonoBehaviour, IHasColor
         LevelManager.Instance.OnFinishLevel += LevelManager_OnFinishLevel;
     }
 
+    private void OnDestroy()
+    {
+        LevelManager.Instance.OnStartLevel -= LevelManager_OnStartLevel;
+        LevelManager.Instance.OnFinishLevel -= LevelManager_OnFinishLevel;
+    }
+
     private void Update()
     {
         if (!canControl)

@@ -74,6 +74,11 @@ public class LevelManager : Singleton<LevelManager>
 
     private void LoadLevel(int level)
     {
+        if (currentLevelInstance != null)
+        {
+            Destroy(currentLevelInstance);
+        }
+
         currentLevelInstance = Instantiate(LevelPrefabArray[level - 1]);
 
         timer = maxTimer;
