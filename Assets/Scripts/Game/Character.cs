@@ -1,102 +1,122 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Character : MonoBehaviour, IHasColor
 {
+    [field: SerializeField]
     public ObjectColorType ColorType { get; set; }
-    public int BrickStackCount => brickStack.Count;
+    [field: SerializeField]
+    public NavMeshAgent Agent { get; private set; }
 
-    [Header("Core")]
+    public Vector3 MoveDirection { get; set; }
+    public Stack<Brick> BrickStack { get; private set; } = new Stack<Brick>();
+    public int IdleAnimHash { get; private set; }
+    public int RunAnimHash { get; private set; }
+    public int HitAnimHash { get; private set; }
+    public int VictoryAnimHash { get; private set; }
+    public int DefeatAnimHash { get; private set; }
+
+    [SerializeField]
+    private CapsuleCollider capsuleCollider;
     [SerializeField]
     private SkinnedMeshRenderer skinnedMeshRenderer;
     [SerializeField]
     private Animator animator;
     [SerializeField]
     private Transform brickHolderTransform;
-    [SerializeField]
-    private ObjectColorType colorType;
 
-    [Header("Movement")]
-    [SerializeField]
-    private float maxSpeed = 6.0f;
-    [SerializeField]
-    private float maxAcceleration = 10.0f;
-    [SerializeField]
-    private float turnSpeed = 10.0f;
 
-    [Header("Ground Check")]
-    [SerializeField]
-    private bool isGrounded;
-    [SerializeField]
-    private float groundCheckRadius = 0.15f;
-    [SerializeField]
-    private float groundCheckDistance = 1.0f;
-    [SerializeField]
-    private LayerMask groundLayerMask;
+    private int currentAnimHash;
 
-    [Header("Slope")]
-    [SerializeField]
-    private float maxGroundAngle = 60.0f;
-    [SerializeField]
-    private float maxSnapSpeed = 100.0f;
-
-    private Rigidbody rb;
-    private CapsuleCollider capsuleCollider;
-
-    private Vector3 currentVelocity;
-    private Vector3 targetVelocity;
-    private Vector3 contactNormal;
-    private float minGroundDotProduct;
-    private int stepsSinceLastGrounded;
-    private string currentAnim;
-    private Stack<Brick> brickStack;
-
+    private bool canControl = true;
+    private Vector3 newPositionAfterHit;
 
     private void Awake()
     {
-        OnCharacterAwake();
+        Initialize();
     }
 
     private void Start()
     {
-        OnCharacterStart();
+        StartCharacter();
+
+        LevelManager.Instance.OnStartLevel += LevelManager_OnStartLevel;
+        LevelManager.Instance.OnFinishLevel += LevelManager_OnFinishLevel;
     }
 
     private void Update()
     {
-        HandleInput();
-        HandleRotation();
-    }
+        if (!canControl)
+        {
+            return;
+        }
 
-    private void FixedUpdate()
-    {
-        GroundCheck();
         UpdateState();
-        AdjustVelocity();
-        HandleMovement();
-    }
 
-    private void OnCollisionEnter(Collision other)
-    {
-        if (other.transform.TryGetComponent<Brick>(out Brick brick))
+        if (MoveDirection != Vector3.zero)
         {
-            if (CanGetBrick(brick))
-            {
-                //PushBrick(brick);
-            }
+            Quaternion targetRotation = Quaternion.LookRotation(MoveDirection);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, Agent.angularSpeed * Time.deltaTime);
         }
 
-        if (other.transform.TryGetComponent<Character>(out Character character))
-        {
-            HandleCharracterCollision(character);
-        }
+        Agent.Move(MoveDirection * Agent.speed * Time.deltaTime);
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        HandleOnTriggerEnter(other);
+    }
+
+    public void ChangeObjectColorType(ObjectColorType type)
+    {
+        ColorType = type;
+
+        skinnedMeshRenderer.material = LevelManager.Instance.ObjectColorsSO.GetObjectColorMaterial(ColorType);
+    }
+
+    public void ChangeAnim(int newAnimHash)
+    {
+        if (newAnimHash == currentAnimHash)
+        {
+            return;
+        }
+
+        currentAnimHash = newAnimHash;
+
+        animator.SetTrigger(currentAnimHash);
+    }
+
+    protected virtual void Initialize()
+    {
+        IdleAnimHash = Animator.StringToHash("Idle");
+        RunAnimHash = Animator.StringToHash("Run");
+        HitAnimHash = Animator.StringToHash("Hit");
+        VictoryAnimHash = Animator.StringToHash("Victory");
+        DefeatAnimHash = Animator.StringToHash("Defeat");
+
+        ChangeObjectColorType(ColorType);
+    }
+
+    protected virtual void StartCharacter()
+    {
+
+    }
+
+    protected virtual void UpdateState()
+    {
+        MoveDirection = Vector3.zero;
+    }
+
+    protected virtual void HandleOnTriggerEnter(Collider other)
+    {
+        if (!canControl)
+        {
+            return;
+        }
+
         if (other.TryGetComponent<Brick>(out Brick brick))
         {
             if (CanGetBrick(brick))
@@ -112,180 +132,83 @@ public class Character : MonoBehaviour, IHasColor
                 PopBrickToStair(stair);
             }
         }
-    }
 
-    public void ChangeObjectColorType(ObjectColorType type)
-    {
-        ColorType = type;
-
-        skinnedMeshRenderer.material = LevelManager.Instance.ObjectColorsSO.GetObjectColorMaterial(ColorType);
-    }
-
-    public void SetTargetVelocityByInput(Vector2 moveInput)
-    {
-        targetVelocity = new Vector3(moveInput.x, 0.0f, moveInput.y).normalized * maxSpeed;
-
-        if (targetVelocity.sqrMagnitude > 0.0f)
+        if (other.TryGetComponent<Character>(out Character character))
         {
-            ChangeAnim("Run");
+            HandleCharracterCollision(character);
         }
-        else
+
+        if (other.TryGetComponent<FinishFloor>(out FinishFloor finishFloor))
         {
-            ChangeAnim("Idle");
+            ReachFinishFloor();
         }
     }
 
-    public void ChangeAnim(string newAnim)
+    protected virtual void ReachFinishFloor()
     {
-        if (newAnim == currentAnim)
+        ChangeAnim(VictoryAnimHash);
+
+        LevelManager.Instance.FinishLevel(this);
+    }
+
+    protected virtual void Hit()
+    {
+        ChangeAnim(HitAnimHash);
+
+        canControl = false;
+
+        capsuleCollider.enabled = false;
+
+        Invoke(nameof(Restore), 1.1f);
+    }
+
+    protected virtual void Restore()
+    {
+        ChangeAnim(IdleAnimHash);
+
+        canControl = true;
+
+        capsuleCollider.enabled = true;
+
+        transform.position = newPositionAfterHit;
+    }
+
+    protected virtual void LevelManager_OnStartLevel(object sender, EventArgs args)
+    {
+        canControl = true;
+    }
+
+    protected virtual void LevelManager_OnFinishLevel(object sender, LevelManager.OnFinishLevelArgs args)
+    {
+        canControl = false;
+
+        if (args.Winner != this)
         {
-            return;
-        }
-
-        currentAnim = newAnim;
-
-        animator.SetTrigger(currentAnim);
-    }
-
-    protected virtual void OnCharacterAwake()
-    {
-        rb = GetComponent<Rigidbody>();
-        capsuleCollider = GetComponent<CapsuleCollider>();
-
-        brickStack = new Stack<Brick>();
-
-        ChangeObjectColorType(colorType);
-    }
-
-    protected virtual void OnCharacterStart()
-    {
-        ChangeAnim("Idle");
-    }
-
-    protected virtual void HandleInput()
-    {
-
-    }
-
-    private void HandleRotation()
-    {
-        if (targetVelocity.magnitude > 0.01f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(targetVelocity);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
-        }
-    }
-
-    private void UpdateState()
-    {
-        minGroundDotProduct = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
-
-        currentVelocity = rb.velocity;
-
-        stepsSinceLastGrounded += 1;
-
-        if (isGrounded || SnapToGround())
-        {
-            stepsSinceLastGrounded = 0;
+            ChangeAnim(DefeatAnimHash);
         }
     }
 
-    private void AdjustVelocity()
+    protected bool CanGetBrick(Brick brick)
     {
-        Vector3 xAxis = ProjectOnContactPlane(Vector3.right, contactNormal).normalized;
-        Vector3 zAxis = ProjectOnContactPlane(Vector3.forward, contactNormal).normalized;
-
-        float currentX = Vector3.Dot(currentVelocity, xAxis);
-        float currentZ = Vector3.Dot(currentVelocity, zAxis);
-
-        float maxSpeedChange = maxAcceleration * Time.deltaTime;
-        float newX = Mathf.MoveTowards(currentX, targetVelocity.x, maxSpeedChange);
-        float newZ = Mathf.MoveTowards(currentZ, targetVelocity.z, maxSpeedChange);
-
-        currentVelocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+        return brick.CanBeCollected && (brick.ColorType == ObjectColorType.Default || brick.ColorType == ColorType);
     }
 
-    private void HandleMovement()
+    protected bool CanBuildStair(Stair stair)
     {
-        rb.velocity = currentVelocity;
-    }
-
-    private void GroundCheck()
-    {
-        rb.useGravity = true;
-
-        Vector3 sphereCastOrigin = transform.position + Vector3.up * capsuleCollider.height * 0.5f;
-
-        if (Physics.SphereCast(sphereCastOrigin, groundCheckRadius, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayerMask))
-        {
-            if (hit.normal.y >= minGroundDotProduct)
-            {
-                isGrounded = true;
-                contactNormal = hit.normal;
-            }
-
-            if (hit.normal.y < 1.0f)
-            {
-                rb.useGravity = false;
-            }
-        }
-        else
-        {
-            isGrounded = false;
-            contactNormal = Vector3.up;
-        }
-    }
-
-    private Vector3 ProjectOnContactPlane(Vector3 vector, Vector3 contactNormal)
-    {
-        return vector - contactNormal * Vector3.Dot(vector, contactNormal);
-    }
-
-    private bool SnapToGround()
-    {
-        if (stepsSinceLastGrounded > 1)
-        {
-            return false;
-        }
-
-        float speed = currentVelocity.magnitude;
-        if (speed > maxSnapSpeed)
-        {
-            return false;
-        }
-
-        if (!Physics.Raycast(rb.position, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayerMask))
-        {
-            return false;
-        }
-
-        if (hit.normal.y < minGroundDotProduct)
-        {
-            return false;
-        }
-
-        contactNormal = hit.normal;
-        float dot = Vector3.Dot(currentVelocity, hit.normal);
-
-        if (dot > 0.0f)
-        {
-            currentVelocity = (currentVelocity - hit.normal * dot).normalized * speed;
-        }
-
-        return true;
+        return BrickStack.Count > 0 && (stair.ColorType == ObjectColorType.Default || stair.ColorType != ColorType);
     }
 
     private void PushBrick(Brick brick)
     {
-        Vector3 brickPosition = Vector3.up * brick.BrickHeight * brickStack.Count;
+        Vector3 brickPosition = Vector3.up * brick.BrickHeight * BrickStack.Count;
         brick.Collect(brickHolderTransform, brickPosition, ColorType);
 
-        brickStack.Push(brick);
+        BrickStack.Push(brick);
     }
 
     private void PopBrickToStair(Stair stair)
     {
-        Brick brick = brickStack.Pop();
+        Brick brick = BrickStack.Pop();
         brick.BuildStair();
 
         stair.Activate(ColorType);
@@ -293,40 +216,39 @@ public class Character : MonoBehaviour, IHasColor
 
     private void HandleCharracterCollision(Character character)
     {
+        //Debug.Log($"{name}: {BrickStack.Count}, {character.name}: {character.BrickStack.Count}");
+
         float ratio = 0.0f;
 
-        if (BrickStackCount > character.BrickStackCount)
+        if (BrickStack.Count > character.BrickStack.Count)
         {
             ratio = 0.0f;
         }
-        else if(BrickStackCount < character.BrickStackCount)
+        else if (BrickStack.Count < character.BrickStack.Count)
         {
             ratio = 1.0f;
         }
-        else
+        //else
+        //{
+        //    ratio = 0.5f;
+        //}
+
+        if (ratio > 0.0f)
         {
-            ratio = 0.5f;
+            int bricksLostCount = Mathf.RoundToInt(BrickStack.Count * ratio);
+
+            for (int i = 0; i < bricksLostCount; i++)
+            {
+                float x = UnityEngine.Random.Range(-2.0f, 2.0f);
+                float z = UnityEngine.Random.Range(-2.0f, 2.0f);
+                Vector3 offset = new Vector3(x, 0.0f, z);
+
+                BrickStack.Pop().Drop(transform.position + offset);
+            }
+
+            newPositionAfterHit = transform.position + (transform.position - character.transform.position).normalized;
+
+            Hit();
         }
-
-        int bricksLostCount = Mathf.RoundToInt(brickStack.Count * ratio);
-
-        for (int i = 0; i < bricksLostCount; i++)
-        {
-            float x = UnityEngine.Random.Range(-2.0f, 2.0f);
-            float z = UnityEngine.Random.Range(-2.0f, 2.0f);
-            Vector3 offset = new Vector3(x, 0.0f, z);
-
-            brickStack.Pop().Drop(transform.position + offset);
-        }
-    }
-
-    private bool CanGetBrick(Brick brick)
-    {
-        return brick.ColorType == ObjectColorType.Default || brick.ColorType == ColorType;
-    }
-
-    private bool CanBuildStair(Stair stair)
-    {
-        return brickStack.Count > 0 && (stair.ColorType == ObjectColorType.Default || stair.ColorType != ColorType);
     }
 }

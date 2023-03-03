@@ -9,27 +9,35 @@ public class Floor : MonoBehaviour
     private BrickObjectPool brickObjectPool;
     [SerializeField]
     private Transform[] brickSpawnPointsArray;
+    [SerializeField]
+    private Staircase[] staircaseArray;
 
     private List<Character> characterOnFloorList;
-    private bool opened;
-    private float timer;
+    private bool opened = false;
+    private bool canSpawnBricks = true;
+    private float timer = 0.0f;
 
     private void Awake()
     {
         characterOnFloorList = new List<Character>();
     }
 
+    private void Start()
+    {
+        LevelManager.Instance.OnFinishLevel += LevelManager_OnFinishLevel;
+    }
+
     private void Update()
     {
-        timer += Time.deltaTime;
-        if (timer >= 5.0f)
+        if (opened && canSpawnBricks)
         {
-            if (opened)
+            timer += Time.deltaTime;
+            if (timer >= 5.0f)
             {
                 SpawnBricksAfterInterval();
-            }
 
-            timer = 0.0f;
+                timer = 0.0f;
+            }
         }
     }
 
@@ -37,13 +45,16 @@ public class Floor : MonoBehaviour
     {
         if (other.TryGetComponent<Character>(out Character character))
         {
-            characterOnFloorList.Add(character);
-
-            if (!opened)
+            if (!characterOnFloorList.Contains(character))
             {
-                Invoke(nameof(OpenFloor), 0.5f);
+                characterOnFloorList.Add(character);
 
-                opened = true;
+                if (!opened)
+                {
+                    opened = true;
+
+                    Invoke(nameof(OpenFloor), 0.1f);
+                }
             }
         }
     }
@@ -59,6 +70,22 @@ public class Floor : MonoBehaviour
     public void OpenFloor()
     {
         SpawnBricks(brickSpawnPointsArray);
+    }
+
+    public Staircase GetNearestStaircase(Vector3 position)
+    {
+        Staircase nearestStaircase = null;
+
+        for (int i = 0; i < staircaseArray.Length; i++)
+        {
+            if (nearestStaircase == null 
+                || Vector3.Distance(nearestStaircase.transform.position, position) >= Vector3.Distance(staircaseArray[i].transform.position, position))
+            {
+                nearestStaircase = staircaseArray[i];
+            }
+        }
+
+        return nearestStaircase;
     }
 
     private void SpawnBricksAfterInterval()
@@ -110,5 +137,10 @@ public class Floor : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(0, characterList.Count);
 
         return characterList[randomIndex].ColorType;
+    }
+
+    private void LevelManager_OnFinishLevel(object sender, LevelManager.OnFinishLevelArgs args)
+    {
+        canSpawnBricks = false;
     }
 }

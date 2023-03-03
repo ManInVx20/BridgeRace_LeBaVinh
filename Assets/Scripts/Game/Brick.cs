@@ -16,6 +16,7 @@ public class Brick : PoolableObject, IHasColor
     }
 
     public ObjectColorType ColorType { get; set; }
+    public bool CanBeCollected { get; private set; }
     public float BrickHeight => brickHeight;
 
     [SerializeField]
@@ -53,6 +54,9 @@ public class Brick : PoolableObject, IHasColor
                 {
                     transform.localScale = Vector3.one;
 
+                    CanBeCollected = true;
+
+                    rb.isKinematic = false;
                     boxCollider.enabled = true;
 
                     state = BrickState.Idle;
@@ -76,9 +80,9 @@ public class Brick : PoolableObject, IHasColor
                 timer += Time.deltaTime;
                 if (timer >= maxTimer)
                 {
-                    boxCollider.isTrigger = true;
+                    CanBeCollected = true;
 
-                    rb.isKinematic = true;
+                    //rb.isKinematic = true;
 
                     state = BrickState.Idle;
 
@@ -88,13 +92,22 @@ public class Brick : PoolableObject, IHasColor
         }
     }
 
+    public override void ReturnToPool()
+    {
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        base.ReturnToPool();
+    }
+
     public void Setup(Transform parent, ObjectColorType type)
     {
         ChangeObjectColorType(type);
 
-        boxCollider.enabled = false;
+        CanBeCollected = false;
 
         rb.isKinematic = true;
+        boxCollider.enabled = false;
 
         transform.SetParent(parent);
 
@@ -107,12 +120,13 @@ public class Brick : PoolableObject, IHasColor
     public void Collect(Transform parent, Vector3 position, ObjectColorType type)
     {
         ChangeObjectColorType(type);
-        
-        transform.SetParent(parent);
 
-        boxCollider.enabled = false;
+        CanBeCollected = false;
 
         rb.isKinematic = true;
+        boxCollider.enabled = false;
+
+        transform.SetParent(parent);
 
         target = position;
 
@@ -128,16 +142,17 @@ public class Brick : PoolableObject, IHasColor
     {
         ChangeObjectColorType(ObjectColorType.Default);
 
-        transform.SetParent(null);
+        CanBeCollected = false;
 
-        boxCollider.isTrigger = false;
-        boxCollider.enabled = true;
+        transform.SetParent(null);
 
         rb.isKinematic = false;
 
+        boxCollider.enabled = true;
+
         target = position;
 
-        maxTimer = Mathf.Abs(transform.position.y - target.y);
+        maxTimer = 1.0f; //Mathf.Abs(transform.position.y - target.y);
 
         Vector3 force = new Vector3(target.x, 0.0f, target.z) - new Vector3(transform.position.x, 0.0f, transform.position.z);
         force.Normalize();
